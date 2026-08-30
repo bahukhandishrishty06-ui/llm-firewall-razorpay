@@ -1,4 +1,4 @@
-# 🛡️ PayGuard — LLM Firewall for Payment Agents
+# PayGuard — LLM Firewall for Payment Agents
 
 [![CI](https://github.com/bahukhandishrishty06-ui/llm-firewall-razorpay/actions/workflows/ci.yml/badge.svg)](https://github.com/bahukhandishrishty06-ui/llm-firewall-razorpay/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -12,7 +12,7 @@ Built for the **Razorpay AI Buildathon** — Risk Manager Track.
 
 ---
 
-## 🎯 Key Differentiators
+## Key Differentiators
 
 PayGuard sits between users and an AI payment support agent, intercepting and screening both **incoming messages** and **proposed actions** before they execute:
 - **Layer 1 — Pre-execution Input Screening**: Sub-millisecond (< 0.5ms) heuristic scanning (70+ attack signatures, homoglyph normalization, zero-width & leetspeak deobfuscation) + optional Claude Haiku semantic analysis.
@@ -20,16 +20,16 @@ PayGuard sits between users and an AI payment support agent, intercepting and sc
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 flowchart TD
     A[Customer Message] --> B{Layer 1: Input Screener}
-    B -->|Block| C[🚫 Blocked Response]
+    B -->|Block| C[BLOCKED Response]
     B -->|Allow/Flag| D[Payment Agent - Claude]
-    D -->|Text Response| E[✅ Return to Customer]
+    D -->|Text Response| E[ALLOWED Return to Customer]
     D -->|Tool Call Proposed| F{Layer 2: Action Screener}
-    F -->|Block| G[🚫 Block Action + Notify]
+    F -->|Block| G[BLOCKED Action Intercepted]
     F -->|Allow| H[Execute Tool - Razorpay API]
     H --> I[Return Result to Agent]
     I --> E
@@ -49,7 +49,7 @@ flowchart TD
 
 ---
 
-## ⚡ Performance Benchmarks
+## Performance Benchmarks
 
 Measured on single-thread execution across held-out attack samples:
 
@@ -62,7 +62,7 @@ Measured on single-thread execution across held-out attack samples:
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 payguard/
@@ -90,8 +90,9 @@ payguard/
 │   ├── benchmark_latency.py     # Latency profiling tool
 │   └── results/                  # Saved evaluation reports
 ├── dashboard/
-│   └── app.py                   # Streamlit web dashboard
-├── tests/                       # 25+ pytest unit and integration tests
+│   ├── app.py                   # Streamlit web dashboard
+│   └── icons.py                 # Vector SVG icon library
+├── tests/                       # 30 pytest unit and integration tests
 ├── .github/workflows/ci.yml     # Multi-version Python CI
 ├── Dockerfile                   # Production container definition
 ├── docker-compose.yml           # Multi-service stack (dashboard + API)
@@ -103,7 +104,7 @@ payguard/
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Clone & Install
 
@@ -127,7 +128,7 @@ cp .env.example .env
 
 ```bash
 make dataset     # Generate synthetic dataset (150 examples)
-make test        # Run full pytest test suite (25 tests)
+make test        # Run full pytest test suite (30 tests)
 make eval        # Run held-out evaluation & FP cost report
 make run         # Launch Streamlit dashboard on http://localhost:8501
 make api         # Launch FastAPI microservice on http://localhost:8000
@@ -135,7 +136,7 @@ make api         # Launch FastAPI microservice on http://localhost:8000
 
 ---
 
-## 🐳 Docker Deployment
+## Docker Deployment
 
 Run both the Web Dashboard and the REST API microservice with Docker Compose:
 
@@ -147,7 +148,7 @@ docker-compose up -d --build
 
 ---
 
-## 🌐 REST API Endpoints
+## REST API Endpoints
 
 ### Screen Input Payload
 ```bash
@@ -165,7 +166,7 @@ curl -X POST http://localhost:8000/v1/screen/action \
 
 ---
 
-## 📊 Evaluation Results
+## Evaluation Results
 
 Performance on held-out test set (47 examples):
 
@@ -183,7 +184,7 @@ Performance on held-out test set (47 examples):
 
 ---
 
-## ⚖️ Compliance & Safety Statement
+## Compliance & Safety Statement
 
 > **PayGuard is strictly a defensive cybersecurity application.**
 
@@ -194,7 +195,7 @@ Performance on held-out test set (47 examples):
 
 ---
 
-## 👩‍💻 Author & License
+## Author & License
 
 Built by **Shrishty Bahukhand** for the **Razorpay AI Buildathon** (Risk Manager Track).  
 Licensed under the [MIT License](LICENSE).
