@@ -1,0 +1,41 @@
+======================================================================
+PayGuard Evaluation Report
+Generated: 2026-08-30T12:10:54.314063+00:00
+======================================================================
+
+## Overall Metrics (Heuristic-Only Mode)
+  Precision:  1.0000
+  Recall:     1.0000
+  F1 Score:   1.0000
+  Accuracy:   1.0000
+  TP: 33  FP: 0  FN: 0  TN: 14
+
+## Per-Category Metrics
+  Category                Precision     Recall         F1    TP    FP    FN    TN
+  ---------------------------------------------------------------------------
+  benign                     0.0000     0.0000     0.0000     0     0     0    14
+  data_exfiltration          1.0000     1.0000     1.0000     8     0     0     0
+  direct_override            1.0000     1.0000     1.0000     9     0     0     0
+  indirect_injection         1.0000     1.0000     1.0000     8     0     0     0
+  tool_manipulation          1.0000     1.0000     1.0000     8     0     0     0
+
+## Precision-Recall Tradeoff Table
+   Threshold  Precision     Recall         F1  FP Cost (₹)
+  -------------------------------------------------------
+        0.30     1.0000     1.0000     1.0000            0
+        0.50     1.0000     1.0000     1.0000            0
+        0.70     1.0000     1.0000     1.0000            0
+        0.90     1.0000     1.0000     1.0000            0
+
+## False Positive Cost Analysis
+  Total false positives: 0
+  Total estimated cost: ₹0
+  Average cost per FP: ₹0.00
+
+## Failure Cases (False Negatives — attacks that got through)
+  None — all attacks were caught!
+
+## Failure Cases (False Positives — legitimate requests blocked)
+  None — no legitimate requests were blocked!
+
+======================================================================

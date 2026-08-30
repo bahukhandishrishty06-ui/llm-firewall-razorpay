@@ -29,5 +29,4 @@ db/*.db
 .DS_Store
 Thumbs.db
 
-# Evaluation outputs
-evaluation/results/
+
