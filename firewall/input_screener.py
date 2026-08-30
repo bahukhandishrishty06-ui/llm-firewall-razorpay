@@ -48,7 +48,7 @@ class ScreeningResult:
 
 INJECTION_PATTERNS = [
     # Direct override patterns
-    (r'(?i)ignore\s+(all\s+)?previous\s+instructions?', 'direct_override', 0.9),
+    (r'(?i)ignore\s+(all\s+)?(previous|prior|your|the)?\s*(instructions?|rules?|guidelines?|prompts?|mandate)', 'direct_override', 0.9),
     (r'(?i)forget\s+(everything|all|what)\s+(you\s+)?(were|have\s+been)\s+told', 'instruction_wipe', 0.85),
     (r'(?i)disregard\s+(your|all|the)\s+(rules?|instructions?|guidelines?|prompt)', 'instruction_wipe', 0.85),
     (r'(?i)your\s+new\s+(directive|instructions?|role|task)\s+(is|are)', 'role_override', 0.8),
