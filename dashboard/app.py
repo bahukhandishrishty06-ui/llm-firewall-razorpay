@@ -387,6 +387,7 @@ with tab3:
         st.markdown("#### Per-Category Performance")
         per_cat = eval_data["per_category_metrics"]
         cat_data = []
+        chart_data = {}
         for cat, metrics in sorted(per_cat.items()):
             cat_data.append({
                 "Category": cat,
@@ -397,7 +398,13 @@ with tab3:
                 "FP": metrics["fp"],
                 "FN": metrics["fn"],
             })
+            if metrics["f1"] > 0:
+                chart_data[cat] = metrics["f1"]
         st.table(cat_data)
+
+        if chart_data:
+            st.markdown("##### 📈 Category F1 Score Breakdown")
+            st.bar_chart(chart_data)
 
         # PR Tradeoff
         st.markdown("#### Precision-Recall Tradeoff at Different Thresholds")
