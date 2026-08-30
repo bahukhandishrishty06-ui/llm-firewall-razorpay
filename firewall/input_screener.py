@@ -213,6 +213,15 @@ def detect_suspicious_formatting(text: str) -> tuple[float, list[str]]:
     return score, triggers
 
 
+def normalize_text(text: str) -> str:
+    """Normalize zero-width characters and common leetspeak substitutions."""
+    # Remove zero-width characters
+    cleaned = re.sub(r'[\u200B-\u200D\uFEFF]', ' ', text)
+    # Simple leet translation table
+    leet_table = str.maketrans({'@': 'a', '3': 'e', '1': 'i', '!': 'i', '0': 'o', '$': 's', '7': 't'})
+    return cleaned.translate(leet_table)
+
+
 def heuristic_scan(text: str) -> tuple[float, list[str]]:
     """
     Fast heuristic scan for injection patterns.
@@ -221,9 +230,11 @@ def heuristic_scan(text: str) -> tuple[float, list[str]]:
     all_triggers = []
     max_score = 0.0
 
-    # Pattern matching
+    norm_text = normalize_text(text)
+
+    # Pattern matching (check both raw and normalized text)
     for pattern, name, weight in INJECTION_PATTERNS:
-        if re.search(pattern, text):
+        if re.search(pattern, text) or re.search(pattern, norm_text):
             all_triggers.append(f"{name} (pattern: {weight:.2f})")
             max_score = max(max_score, weight)
 
