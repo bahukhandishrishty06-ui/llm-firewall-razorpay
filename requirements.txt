@@ -13,9 +13,6 @@ razorpay>=1.4.1
 # Database
 # sqlite3 is built-in
 
-# Dashboard
-streamlit>=1.29.0
-
 # Evaluation & Data
 pandas>=2.1.0
 tabulate>=0.9.0

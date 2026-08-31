@@ -10,7 +10,7 @@ import os
 from datetime import datetime, timezone
 from contextlib import contextmanager
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "db", "payguard.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "db", "payguard.db")
 
 
 def get_db_path():

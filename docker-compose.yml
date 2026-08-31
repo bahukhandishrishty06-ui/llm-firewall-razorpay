@@ -1,16 +1,12 @@
 version: '3.8'
 
 services:
-  dashboard:
-    build: .
+  frontend:
+    build: ./frontend
     ports:
-      - "8501:8501"
-    environment:
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
-      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
-    volumes:
-      - ./db:/app/db
+      - "8501:80"
+    depends_on:
+      - api
     restart: unless-stopped
 
   api:

@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-009688.svg)](https://fastapi.tiangolo.com)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.29+-FF4B4B.svg)](https://streamlit.io)
+[![React](https://img.shields.io/badge/React-19-61DAFB.svg)](https://react.dev)
 
 **A high-performance, real-time firewall that protects LLM-powered payment agents from prompt injection, unauthorized actions, and data exfiltration in agentic commerce.**
 
@@ -90,8 +90,13 @@ payguard/
 │   ├── benchmark_latency.py     # Latency profiling tool
 │   └── results/                  # Saved evaluation reports
 ├── dashboard/
-│   ├── app.py                   # Streamlit web dashboard
-│   └── icons.py                 # Vector SVG icon library
+│   ├── app.py                   # Legacy Streamlit dashboard
+│   └── icons.py                 # Legacy vector icon library
+├── frontend/
+│   ├── src/                     # React paper-light security console
+│   ├── vite.config.js           # Local API proxy and Vite configuration
+│   ├── nginx.conf               # Production SPA and FastAPI proxy
+│   └── Dockerfile               # React build + Nginx runtime
 ├── tests/                       # 30 pytest unit and integration tests
 ├── .github/workflows/ci.yml     # Multi-version Python CI
 ├── Dockerfile                   # Production container definition
@@ -130,8 +135,9 @@ cp .env.example .env
 make dataset     # Generate synthetic dataset (150 examples)
 make test        # Run full pytest test suite (30 tests)
 make eval        # Run held-out evaluation & FP cost report
-make run         # Launch Streamlit dashboard on http://localhost:8501
-make api         # Launch FastAPI microservice on http://localhost:8000
+make api         # Start FastAPI on http://localhost:8000
+make frontend    # Start React on http://localhost:5173 (second terminal)
+make run         # Build and run both services with Docker Compose
 ```
 
 ---
@@ -143,7 +149,7 @@ Run both the Web Dashboard and the REST API microservice with Docker Compose:
 ```bash
 docker-compose up -d --build
 ```
-- **Streamlit Dashboard**: [http://localhost:8501](http://localhost:8501)
+- **React Dashboard**: [http://localhost:8501](http://localhost:8501)
 - **FastAPI OpenAPI Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---

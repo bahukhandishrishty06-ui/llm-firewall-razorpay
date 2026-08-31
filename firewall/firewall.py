@@ -95,6 +95,7 @@ class PayGuardFirewall:
                 force_llm=self.use_llm,
                 block_threshold=self.block_threshold,
                 flag_threshold=self.flag_threshold,
+                use_llm=self.use_llm,
             )
 
             if input_result.verdict == "block":
@@ -309,6 +310,7 @@ def screen_input_heuristic_only(text: str, block_threshold: float = 0.7,
         force_llm=False,
         block_threshold=block_threshold,
         flag_threshold=flag_threshold,
+        use_llm=False,
     )
 
 

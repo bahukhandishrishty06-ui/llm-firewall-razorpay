@@ -7,6 +7,8 @@ class ScreenRequest(BaseModel):
     input_type: str = Field("direct_input", description="Type of input: direct_input, tool_output, retrieved_content")
     session_id: Optional[str] = Field(None, description="Optional session tracking ID")
     use_llm: bool = Field(False, description="Whether to trigger LLM semantic reasoning layer")
+    block_threshold: float = Field(0.7, ge=0.0, le=1.0)
+    flag_threshold: float = Field(0.4, ge=0.0, le=1.0)
 
 class ScreenResponse(BaseModel):
     verdict: str = Field(..., description="Verdict: allow, block, flag_for_human")
@@ -30,3 +32,29 @@ class HealthResponse(BaseModel):
     status: str
     version: str
     timestamp: str
+
+
+class ProcessRequest(BaseModel):
+    text: str = Field(..., min_length=1, description="Customer message to process through the complete firewall")
+    use_llm: bool = Field(False, description="Whether to use the semantic analysis layer")
+    block_threshold: float = Field(0.7, ge=0.0, le=1.0)
+    flag_threshold: float = Field(0.4, ge=0.0, le=1.0)
+
+
+class ProcessResponse(BaseModel):
+    verdict: str
+    confidence: float
+    reason: str
+    layer: str
+    agent_response: str = ""
+    tool_calls_made: List[Dict[str, Any]] = Field(default_factory=list)
+    tool_calls_blocked: List[Dict[str, Any]] = Field(default_factory=list)
+    input_screening: Optional[Dict[str, Any]] = None
+    action_screenings: List[Dict[str, Any]] = Field(default_factory=list)
+    session_id: str
+    timestamp: str
+
+
+class ResetResponse(BaseModel):
+    status: str
+    session_id: str

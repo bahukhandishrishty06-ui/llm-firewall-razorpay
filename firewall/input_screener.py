@@ -345,7 +345,8 @@ HEURISTIC_LLM_THRESHOLD = 0.2  # Trigger LLM if heuristic score > this
 
 def screen_input(text: str, input_type: str = "direct_input",
                  session_id: str = None, force_llm: bool = False,
-                 block_threshold: float = None, flag_threshold: float = None) -> ScreeningResult:
+                 block_threshold: float = None, flag_threshold: float = None,
+                 use_llm: bool = True) -> ScreeningResult:
     """
     Screen an input message through both heuristic and LLM layers.
 
@@ -356,12 +357,13 @@ def screen_input(text: str, input_type: str = "direct_input",
         force_llm: If True, always run LLM analysis regardless of heuristic score
         block_threshold: Override default block threshold
         flag_threshold: Override default flag threshold
+        use_llm: Whether semantic analysis is enabled at all
 
     Returns:
         ScreeningResult with verdict, confidence, and reasoning
     """
-    bt = block_threshold or BLOCK_THRESHOLD
-    ft = flag_threshold or FLAG_THRESHOLD
+    bt = block_threshold if block_threshold is not None else BLOCK_THRESHOLD
+    ft = flag_threshold if flag_threshold is not None else FLAG_THRESHOLD
 
     # Stage 1: Heuristic scan
     heuristic_score, heuristic_triggers = heuristic_scan(text)
@@ -370,7 +372,7 @@ def screen_input(text: str, input_type: str = "direct_input",
     llm_result = None
     final_confidence = heuristic_score
 
-    if force_llm or heuristic_score >= HEURISTIC_LLM_THRESHOLD:
+    if use_llm and (force_llm or heuristic_score >= HEURISTIC_LLM_THRESHOLD):
         llm_result = llm_analyze(text, input_type, heuristic_score, heuristic_triggers)
 
         # Combine heuristic and LLM scores

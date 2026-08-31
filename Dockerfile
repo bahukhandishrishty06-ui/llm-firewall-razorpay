@@ -18,6 +18,6 @@ COPY . .
 # Generate dataset on build
 RUN python -m data.generate_attack_corpus
 
-EXPOSE 8501 8000
+EXPOSE 8000
 
-CMD ["streamlit", "run", "dashboard/app.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
+CMD ["uvicorn", "api.server:app", "--host", "0.0.0.0", "--port", "8000"]
