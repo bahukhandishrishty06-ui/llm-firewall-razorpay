@@ -1,0 +1,641 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "PayGuard API",
+    "description": "Real-time LLM Firewall REST API for Payment and Agentic-Commerce contexts",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/screen/input": {
+      "post": {
+        "summary": "Screen Input Endpoint",
+        "operationId": "screen_input_endpoint_v1_screen_input_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScreenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScreenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/screen/action": {
+      "post": {
+        "summary": "Screen Action Endpoint",
+        "operationId": "screen_action_endpoint_v1_screen_action_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActionScreenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionScreenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/firewall/process": {
+      "post": {
+        "summary": "Process Message Endpoint",
+        "description": "Run a message through the complete Layer 1 \u2192 agent \u2192 Layer 2 pipeline.",
+        "operationId": "process_message_endpoint_v1_firewall_process_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/session/reset": {
+      "post": {
+        "summary": "Reset Session Endpoint",
+        "operationId": "reset_session_endpoint_v1_session_reset_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResetResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/audit/decisions": {
+      "get": {
+        "summary": "Firewall Decisions Endpoint",
+        "operationId": "firewall_decisions_endpoint_v1_audit_decisions_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 40,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Firewall Decisions Endpoint V1 Audit Decisions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/audit/actions": {
+      "get": {
+        "summary": "Audit Actions Endpoint",
+        "operationId": "audit_actions_endpoint_v1_audit_actions_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 40,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Audit Actions Endpoint V1 Audit Actions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/evaluation/results": {
+      "get": {
+        "summary": "Evaluation Results Endpoint",
+        "operationId": "evaluation_results_endpoint_v1_evaluation_results_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Evaluation Results Endpoint V1 Evaluation Results Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ActionScreenRequest": {
+        "properties": {
+          "tool_name": {
+            "type": "string",
+            "title": "Tool Name",
+            "description": "Name of tool being called (e.g. issue_refund, apply_discount)"
+          },
+          "tool_args": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Tool Args",
+            "description": "Arguments passed to the tool"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id",
+            "description": "Active session ID for anomaly velocity tracking"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tool_name",
+          "tool_args"
+        ],
+        "title": "ActionScreenRequest"
+      },
+      "ActionScreenResponse": {
+        "properties": {
+          "verdict": {
+            "type": "string",
+            "title": "Verdict"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "policy_violations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Policy Violations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "verdict",
+          "confidence",
+          "reason"
+        ],
+        "title": "ActionScreenResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "version",
+          "timestamp"
+        ],
+        "title": "HealthResponse"
+      },
+      "ProcessRequest": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Text",
+            "description": "Customer message to process through the complete firewall"
+          },
+          "use_llm": {
+            "type": "boolean",
+            "title": "Use Llm",
+            "description": "Whether to use the semantic analysis layer",
+            "default": false
+          },
+          "block_threshold": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Block Threshold",
+            "default": 0.7
+          },
+          "flag_threshold": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Flag Threshold",
+            "default": 0.4
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "ProcessRequest"
+      },
+      "ProcessResponse": {
+        "properties": {
+          "verdict": {
+            "type": "string",
+            "title": "Verdict"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "layer": {
+            "type": "string",
+            "title": "Layer"
+          },
+          "agent_response": {
+            "type": "string",
+            "title": "Agent Response",
+            "default": ""
+          },
+          "tool_calls_made": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Tool Calls Made"
+          },
+          "tool_calls_blocked": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Tool Calls Blocked"
+          },
+          "input_screening": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Screening"
+          },
+          "action_screenings": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Action Screenings"
+          },
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "verdict",
+          "confidence",
+          "reason",
+          "layer",
+          "session_id",
+          "timestamp"
+        ],
+        "title": "ProcessResponse"
+      },
+      "ResetResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "session_id"
+        ],
+        "title": "ResetResponse"
+      },
+      "ScreenRequest": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "description": "Message text or retrieved content to screen"
+          },
+          "input_type": {
+            "type": "string",
+            "title": "Input Type",
+            "description": "Type of input: direct_input, tool_output, retrieved_content",
+            "default": "direct_input"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id",
+            "description": "Optional session tracking ID"
+          },
+          "use_llm": {
+            "type": "boolean",
+            "title": "Use Llm",
+            "description": "Whether to trigger LLM semantic reasoning layer",
+            "default": false
+          },
+          "block_threshold": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Block Threshold",
+            "default": 0.7
+          },
+          "flag_threshold": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Flag Threshold",
+            "default": 0.4
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "ScreenRequest"
+      },
+      "ScreenResponse": {
+        "properties": {
+          "verdict": {
+            "type": "string",
+            "title": "Verdict",
+            "description": "Verdict: allow, block, flag_for_human"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence",
+            "description": "Risk confidence score (0.0 to 1.0)"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "description": "Human-readable decision rationale"
+          },
+          "layer": {
+            "type": "string",
+            "title": "Layer",
+            "description": "Screening layer responsible for decision"
+          },
+          "heuristic_triggers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Heuristic Triggers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "verdict",
+          "confidence",
+          "reason",
+          "layer"
+        ],
+        "title": "ScreenResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
