@@ -142,3 +142,9 @@ def evaluation_results_endpoint():
         raise HTTPException(status_code=404, detail="Evaluation results have not been generated.")
     with open(results_path, "r", encoding="utf-8") as results_file:
         return json.load(results_file)
+
+
+@app.get("/v1/telemetry/metrics", response_model=dict[str, Any])
+def telemetry_metrics_endpoint():
+    from api.metrics import metrics_collector
+    return metrics_collector.get_stats()
