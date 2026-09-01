@@ -130,6 +130,88 @@ function AgentResponse({ content }) {
   )
 }
 
+function toneForVerdict(verdict) {
+  if (verdict === 'block') return 'block'
+  if (verdict === 'flag_for_human') return 'flag'
+  return 'allow'
+}
+
+function AttackReplayTimeline({ result }) {
+  const inputScreening = result.input_screening
+  const actionScreenings = result.action_screenings || []
+  const proposedActions = actionScreenings.map((screening) => (
+    `${screening.tool_name || 'unknown_action'}(${JSON.stringify(screening.tool_args || {})})`
+  ))
+  const policyViolations = actionScreenings.flatMap((screening) => screening.policy_violations || [])
+  const outcomeTone = toneForVerdict(result.verdict)
+  const inputTone = inputScreening ? toneForVerdict(inputScreening.verdict) : 'allow'
+  const verificationGate = result.layer === 'refund_verification'
+
+  const steps = [
+    {
+      icon: Shield,
+      label: 'Layer 1 · incoming message scan',
+      tone: inputTone,
+      summary: inputScreening
+        ? `${inputScreening.verdict.replaceAll('_', ' ')} · ${formatPercent(inputScreening.confidence)}`
+        : 'Screening bypassed for this evaluation',
+      details: inputScreening?.heuristic_triggers?.length
+        ? inputScreening.heuristic_triggers
+        : ['No prompt-injection indicators detected'],
+    },
+    verificationGate
+      ? {
+          icon: FileClock,
+          label: 'Refund evidence verification gate',
+          tone: 'flag',
+          summary: 'Stopped before the payment agent',
+          details: ['Proof, authenticated ownership, and trusted review are required before a refund can be assessed.'],
+        }
+      : {
+          icon: Sparkles,
+          label: 'Agent action proposal',
+          tone: proposedActions.length ? 'allow' : 'flag',
+          summary: proposedActions.length ? `${proposedActions.length} proposed action${proposedActions.length === 1 ? '' : 's'}` : 'No payment action proposed',
+          details: proposedActions.length ? proposedActions : ['The agent produced a text response only.'],
+        },
+    !verificationGate && {
+      icon: ShieldCheck,
+      label: 'Layer 2 · policy enforcement',
+      tone: policyViolations.length ? outcomeTone : 'allow',
+      summary: actionScreenings.length ? `${policyViolations.length} policy violation${policyViolations.length === 1 ? '' : 's'}` : 'No action required policy execution',
+      details: policyViolations.length ? policyViolations : ['No proposed action bypassed the policy gate.'],
+    },
+    {
+      icon: outcomeTone === 'block' ? CircleSlash2 : outcomeTone === 'flag' ? AlertCircle : Check,
+      label: 'Final outcome',
+      tone: outcomeTone,
+      summary: verdictDetails(result.verdict).label,
+      details: [result.reason],
+    },
+  ].filter(Boolean)
+
+  return (
+    <section className="attack-replay" aria-label="Attack replay timeline">
+      <div className="section-label"><Activity size={13} /> Decision replay</div>
+      <ol className="replay-timeline">
+        {steps.map(({ icon: Icon, label, tone, summary, details }, index) => (
+          <li className={`replay-step ${tone}`} key={label}>
+            <span className="replay-marker"><Icon size={14} /></span>
+            <div className="replay-content">
+              <span className="replay-step-label">{String(index + 1).padStart(2, '0')} · {label}</span>
+              <strong>{summary}</strong>
+              <details>
+                <summary>Show evidence</summary>
+                <ul>{details.map((detail, detailIndex) => <li key={detailIndex}>{detail}</li>)}</ul>
+              </details>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
+
 function Toggle({ checked, onChange, label }) {
   return (
     <label className="toggle-row">
@@ -185,6 +267,7 @@ function ResultPanel({ result }) {
         <div><dt>Mandate compliance</dt><dd>{result.verdict === 'allow' && !hasFinancialAction ? 'Pending verification' : result.verdict === 'allow' ? 'Yes' : 'Violation'}</dd></div>
       </dl>
       <p className="verdict-reason"><strong>Rationale</strong>{result.reason}</p>
+      <AttackReplayTimeline result={result} />
       {result.agent_response && (
         <div className="agent-output">
           <span>Agent context output</span>

@@ -203,7 +203,11 @@ class PayGuardFirewall:
                 flag_threshold=self.flag_threshold,
                 authenticated_customer_id=self.authenticated_customer_id,
             )
-            action_screenings.append(action_result.to_dict())
+            screening = action_result.to_dict()
+            # Preserve the proposed action alongside its policy decision so the
+            # UI can replay the complete decision path without guessing.
+            screening.update({"tool_name": tool_name, "tool_args": tool_args})
+            action_screenings.append(screening)
 
             if action_result.verdict == "block":
                 # Block this tool call

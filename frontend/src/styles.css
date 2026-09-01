@@ -148,6 +148,20 @@ textarea:focus { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(40,68,94,
 .agent-response li + li { margin-top: 3px; }
 .agent-response strong { color: #19232d; font-weight: 600; }
 .agent-response code { padding: 1px 4px; border-radius: 2px; background: #eceadf; color: #28445e; font-family: 'JetBrains Mono', monospace; font-size: .74rem; }
+.attack-replay { margin-top: 17px; padding: 14px 15px 4px; border: 1px solid var(--rule); border-radius: 3px; background: rgba(255,254,250,.5); }
+.attack-replay .section-label { display: flex; align-items: center; gap: 6px; margin-bottom: 11px; }
+.replay-timeline { margin: 0; padding: 0; list-style: none; }
+.replay-step { position: relative; display: grid; grid-template-columns: 27px 1fr; gap: 10px; padding: 0 0 13px; }
+.replay-step:not(:last-child)::before { position: absolute; top: 26px; bottom: 0; left: 12px; width: 1px; background: #c9cfc9; content: ''; }
+.replay-marker { display: grid; place-items: center; width: 25px; height: 25px; border: 1px solid currentColor; border-radius: 50%; background: #fffefa; }
+.replay-step.allow { color: #28785a; }.replay-step.block { color: #b14a40; }.replay-step.flag { color: #9b6928; }
+.replay-content { min-width: 0; padding-bottom: 2px; color: #2b3741; }
+.replay-step-label { display: block; color: #66717a; font-family: 'JetBrains Mono', monospace; font-size: .61rem; font-weight: 600; letter-spacing: .065em; text-transform: uppercase; }
+.replay-content > strong { display: block; margin-top: 3px; color: #2b3741; font-size: .76rem; font-weight: 600; }
+.replay-content details { margin-top: 6px; border: 0; background: transparent; }
+.replay-content details summary { display: inline-flex; padding: 0; color: #58636c; font-size: .69rem; }
+.replay-content details summary::after { display: none; }
+.replay-content details ul { margin: 6px 0 0; padding-left: 17px; color: #58636c; font-size: .7rem; line-height: 1.5; overflow-wrap: anywhere; }
 .details-list { margin-top: 16px; }
 
 details { border: 1px solid var(--rule); background: rgba(255,254,250,.58); }
