@@ -15,6 +15,7 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
 SECRET_PATTERNS = [
     (r'(?i)rzp_live_[a-zA-Z0-9]{14,}', "Live Razorpay Key ID"),
     (r'(?i)sk-ant-api[a-zA-Z0-9_\-]{20,}', "Live Anthropic API Secret"),
+    (r'(?i)gsk_[a-zA-Z0-9]{20,}', "Live Groq API Secret"),
     (r'(?i)password\s*=\s*["\'][^"\']{6,}["\']', "Hardcoded Password String")
 ]
 

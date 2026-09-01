@@ -8,6 +8,14 @@
 
 **A high-performance, real-time firewall that protects LLM-powered payment agents from prompt injection, unauthorized actions, and data exfiltration in agentic commerce.**
 
+### Refund safety policy
+
+Refunds fail closed. A customer statement alone is not proof: an authenticated
+customer context and evidence verified by a trusted back-office service must be
+linked to the exact order before a refund can execute. The agent cannot create
+or accept evidence IDs from a chat message; when proof is missing, it asks the
+customer to submit it for review.
+
 Built for the **Razorpay AI Buildathon** — Risk Manager Track.
 
 ---
@@ -15,7 +23,7 @@ Built for the **Razorpay AI Buildathon** — Risk Manager Track.
 ## Key Differentiators
 
 PayGuard sits between users and an AI payment support agent, intercepting and screening both **incoming messages** and **proposed actions** before they execute:
-- **Layer 1 — Pre-execution Input Screening**: Sub-millisecond (< 0.5ms) heuristic scanning (70+ attack signatures, homoglyph normalization, zero-width & leetspeak deobfuscation) + optional Claude Haiku semantic analysis.
+- **Layer 1 — Pre-execution Input Screening**: Sub-millisecond (< 0.5ms) heuristic scanning (70+ attack signatures, homoglyph normalization, zero-width & leetspeak deobfuscation) + optional Groq semantic analysis.
 - **Layer 2 — Post-decision Action Screening**: Validates proposed tool calls (`issue_refund`, `apply_discount`, `check_order`) against hardcoded mandate policies, session velocity anomaly models, and conversation consistency before executing against Razorpay APIs.
 
 ---
@@ -26,7 +34,7 @@ PayGuard sits between users and an AI payment support agent, intercepting and sc
 flowchart TD
     A[Customer Message] --> B{Layer 1: Input Screener}
     B -->|Block| C[BLOCKED Response]
-    B -->|Allow/Flag| D[Payment Agent - Claude]
+    B -->|Allow/Flag| D[Payment Agent - Groq]
     D -->|Text Response| E[ALLOWED Return to Customer]
     D -->|Tool Call Proposed| F{Layer 2: Action Screener}
     F -->|Block| G[BLOCKED Action Intercepted]
@@ -39,11 +47,11 @@ flowchart TD
     H -.->|Log| J
     
     subgraph "Layer 1: Input Screening"
-        B1[Heuristic Pre-filter<br/>70+ regex patterns<br/>Homoglyph detection<br/>Zero-width & Leet normalization] --> B2[LLM Semantic Analysis<br/>Claude Haiku<br/>Intent classification]
+        B1[Heuristic Pre-filter<br/>70+ regex patterns<br/>Homoglyph detection<br/>Zero-width & Leet normalization] --> B2[LLM Semantic Analysis<br/>Groq<br/>Intent classification]
     end
     
     subgraph "Layer 2: Action Screening"
-        F1[Policy Rule Check<br/>Amount limits<br/>Time windows<br/>Customer eligibility] --> F2[Anomaly Detection<br/>Multi-refund patterns<br/>Discount stacking] --> F3[Context Analysis<br/>Claude Haiku<br/>Conversation consistency]
+        F1[Policy Rule Check<br/>Amount limits<br/>Time windows<br/>Customer eligibility] --> F2[Anomaly Detection<br/>Multi-refund patterns<br/>Discount stacking] --> F3[Context Analysis<br/>Groq<br/>Conversation consistency]
     end
 ```
 
@@ -67,7 +75,7 @@ Measured on single-thread execution across held-out attack samples:
 ```
 payguard/
 ├── agent/
-│   ├── target_agent.py          # Vulnerable payment agent (Claude + tool-use)
+│   ├── target_agent.py          # Vulnerable payment agent (Groq + tool-use)
 │   ├── tools.py                 # check_order, issue_refund, apply_discount
 │   └── mock_razorpay.py         # Mock Razorpay SDK fixture for offline tests
 ├── firewall/
@@ -124,7 +132,7 @@ make install
 ```bash
 cp .env.example .env
 # Fill in keys in .env (optional for heuristic evaluation mode):
-#   ANTHROPIC_API_KEY=sk-ant-api03-...
+#   GROQ_API_KEY=gsk_...
 #   RAZORPAY_KEY_ID=rzp_test_...
 #   RAZORPAY_KEY_SECRET=...
 ```

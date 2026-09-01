@@ -5,7 +5,7 @@ retrieved content) for injection and manipulation signals.
 
 Two-stage approach:
 1. Heuristic pre-filter (fast, zero-cost) — regex patterns, Unicode detection
-2. LLM semantic analysis (Claude Haiku) — triggered when heuristics flag concern
+2. LLM semantic analysis (Groq) — triggered when heuristics flag concern
 """
 
 import os
@@ -13,7 +13,7 @@ import re
 import json
 import unicodedata
 from dataclasses import dataclass, asdict
-from anthropic import Anthropic
+from groq import Groq
 from dotenv import load_dotenv
 
 import sys
@@ -22,7 +22,7 @@ from database import log_firewall_decision
 
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
 
-FIREWALL_MODEL = os.getenv("FIREWALL_MODEL", "claude-haiku-3-20250414")
+FIREWALL_MODEL = os.getenv("FIREWALL_MODEL", "openai/gpt-oss-20b")
 
 
 @dataclass
@@ -290,11 +290,11 @@ Respond with ONLY a JSON object (no markdown, no explanation outside the JSON):
 def llm_analyze(text: str, input_type: str, heuristic_score: float,
                 heuristic_triggers: list, api_key: str = None) -> dict:
     """
-    Use Claude Haiku for semantic analysis of the input.
+    Use Groq for semantic analysis of the input.
     Only called when heuristic score suggests potential risk.
     """
     try:
-        client = Anthropic(api_key=api_key or os.getenv("ANTHROPIC_API_KEY"))
+        client = Groq(api_key=api_key or os.getenv("GROQ_API_KEY"))
 
         heuristic_info = "None" if not heuristic_triggers else "\n".join(
             f"- {t}" for t in heuristic_triggers
@@ -306,13 +306,13 @@ def llm_analyze(text: str, input_type: str, heuristic_score: float,
             heuristic_info=heuristic_info,
         )
 
-        response = client.messages.create(
+        response = client.chat.completions.create(
             model=FIREWALL_MODEL,
             max_tokens=500,
             messages=[{"role": "user", "content": prompt}],
         )
 
-        response_text = response.content[0].text.strip()
+        response_text = (response.choices[0].message.content or "").strip()
 
         # Parse JSON response
         # Handle possible markdown wrapping

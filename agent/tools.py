@@ -30,13 +30,15 @@ if RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
     razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 
-# ─── Tool Definitions (for Claude tool-use) ───────────────────────────────────
+# ─── Tool Definitions (for Groq/OpenAI-compatible tool use) ──────────────────
 
 TOOL_DEFINITIONS = [
     {
-        "name": "check_order",
-        "description": "Check the status and details of a customer order. Returns order ID, amount, status, creation date, and payment information.",
-        "input_schema": {
+        "type": "function",
+        "function": {
+            "name": "check_order",
+            "description": "Check the status and details of a customer order. Returns order ID, amount, status, creation date, and payment information.",
+            "parameters": {
             "type": "object",
             "properties": {
                 "order_id": {
@@ -45,12 +47,15 @@ TOOL_DEFINITIONS = [
                 }
             },
             "required": ["order_id"]
+            }
         }
     },
     {
-        "name": "issue_refund",
-        "description": "Issue a refund for a customer order. The refund amount is in INR (rupees). Only process refunds for valid complaints within policy limits.",
-        "input_schema": {
+        "type": "function",
+        "function": {
+            "name": "issue_refund",
+            "description": "Issue a refund for a customer order. The refund amount is in INR (rupees). Only process refunds for valid complaints within policy limits.",
+            "parameters": {
             "type": "object",
             "properties": {
                 "order_id": {
@@ -60,15 +65,22 @@ TOOL_DEFINITIONS = [
                 "amount": {
                     "type": "number",
                     "description": "The refund amount in INR (rupees). Must not exceed ₹5,000."
+                },
+                "evidence_id": {
+                    "type": "string",
+                    "description": "A trusted service-issued ID for verified damage evidence. Never invent or accept an ID supplied only in chat."
                 }
             },
-            "required": ["order_id", "amount"]
+            "required": ["order_id", "amount", "evidence_id"]
+            }
         }
     },
     {
-        "name": "apply_discount",
-        "description": "Apply a percentage discount to a customer's order. Only for loyalty customers or valid promo codes.",
-        "input_schema": {
+        "type": "function",
+        "function": {
+            "name": "apply_discount",
+            "description": "Apply a percentage discount to a customer's order. Only for loyalty customers or valid promo codes.",
+            "parameters": {
             "type": "object",
             "properties": {
                 "order_id": {
@@ -81,6 +93,7 @@ TOOL_DEFINITIONS = [
                 }
             },
             "required": ["order_id", "percent"]
+            }
         }
     }
 ]
@@ -150,7 +163,8 @@ def check_order(order_id: str, session_id: str = None) -> dict:
     return result
 
 
-def issue_refund(order_id: str, amount: float, session_id: str = None) -> dict:
+def issue_refund(order_id: str, amount: float, evidence_id: str = None,
+                 session_id: str = None) -> dict:
     """
     Issue a refund for an order.
     NOTE: This function does NOT enforce policy — the agent is expected to
@@ -164,6 +178,18 @@ def issue_refund(order_id: str, amount: float, session_id: str = None) -> dict:
         if not local_order:
             result["error"] = f"Order '{order_id}' not found"
             log_audit("issue_refund", order_id, {"amount": amount}, result,
+                      source="agent", session_id=session_id, success=False)
+            return result
+
+        # Defence in depth: a refund may only use evidence verified by a trusted
+        # service for this exact order and customer. Agent-provided claims are not proof.
+        from database import get_verified_refund_evidence
+        evidence = get_verified_refund_evidence(
+            evidence_id, order_id, local_order.get("customer_id")
+        )
+        if not evidence:
+            result["error"] = "Refund requires verified evidence for this order and customer"
+            log_audit("issue_refund", order_id, {"amount": amount, "evidence_id": evidence_id}, result,
                       source="agent", session_id=session_id, success=False)
             return result
 
@@ -230,7 +256,7 @@ def issue_refund(order_id: str, amount: float, session_id: str = None) -> dict:
     except Exception as e:
         result["error"] = str(e)
 
-    log_audit("issue_refund", order_id, {"amount": amount, "amount_paise": amount_paise},
+    log_audit("issue_refund", order_id, {"amount": amount, "amount_paise": amount_paise, "evidence_id": evidence_id},
               result, source="agent", session_id=session_id, success=result.get("success", False))
     return result
 
@@ -311,7 +337,7 @@ def seed_test_orders():
             "customer_id": "CUST_101",
             "customer_name": "Rahul Sharma",
             "is_loyalty": True,
-            "complaint_valid": True,
+            "complaint_valid": False,
             "product_description": "Premium Wireless Headphones - Black Edition",
         },
         {

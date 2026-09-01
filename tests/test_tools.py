@@ -1,7 +1,7 @@
 """Unit tests for Agent Tools and SQLite Database."""
 import pytest
 from agent.tools import check_order, issue_refund, apply_discount, seed_test_orders
-from database import get_order, get_audit_log
+from database import get_order, get_audit_log, record_verified_refund_evidence
 
 @pytest.fixture(autouse=True)
 def setup_orders():
@@ -19,9 +19,16 @@ def test_check_order_nonexistent():
     assert "error" in res
 
 def test_issue_refund_simulated():
-    res = issue_refund("ORD_001", 500)
+    record_verified_refund_evidence("EV-TEST-TOOLS-ORD-003", "ORD_003", "CUST_103", "test-reviewer")
+    res = issue_refund("ORD_003", 500, evidence_id="EV-TEST-TOOLS-ORD-003")
     assert res["success"] is True
     assert res["amount"] == 500
+
+
+def test_issue_refund_without_verified_evidence_is_rejected():
+    res = issue_refund("ORD_001", 500)
+    assert res["success"] is False
+    assert "verified evidence" in res["error"]
 
 def test_apply_discount():
     res = apply_discount("ORD_003", 10)

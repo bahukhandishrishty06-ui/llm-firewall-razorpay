@@ -395,7 +395,7 @@ with st.sidebar:
     st.markdown("<p style='font-size: 0.78rem; color: #687078;'>Policy and pipeline configuration</p>", unsafe_allow_html=True)
 
     use_llm = st.toggle("Enable LLM Semantic Analysis", value=False,
-                         help="Activates Claude Haiku semantic analysis layer alongside sub-millisecond heuristic screening.")
+                         help="Activates the Groq semantic analysis layer alongside sub-millisecond heuristic screening.")
     if use_llm != st.session_state.firewall.use_llm:
         st.session_state.firewall.use_llm = use_llm
 

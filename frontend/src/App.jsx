@@ -63,6 +63,73 @@ function verdictDetails(verdict) {
   return { label: 'Flagged · Manual audit required', icon: AlertCircle, tone: 'flag' }
 }
 
+function renderInlineMarkdown(text) {
+  return text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter(Boolean).map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>
+    }
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return <code key={index}>{part.slice(1, -1)}</code>
+    }
+    return <span key={index}>{part}</span>
+  })
+}
+
+function AgentResponse({ content }) {
+  const blocks = []
+  let paragraph = []
+  let list = []
+
+  const flushParagraph = () => {
+    if (paragraph.length) {
+      blocks.push({ type: 'paragraph', content: paragraph.join(' ') })
+      paragraph = []
+    }
+  }
+  const flushList = () => {
+    if (list.length) {
+      blocks.push({ type: 'list', items: list })
+      list = []
+    }
+  }
+
+  content.replaceAll('\r\n', '\n').split('\n').forEach((line) => {
+    const trimmed = line.trim()
+    const heading = trimmed.match(/^#{1,6}\s+(.+)$/)
+    const bullet = trimmed.match(/^[-*+]\s+(.+)$/)
+    const numbered = trimmed.match(/^\d+[.)]\s+(.+)$/)
+
+    if (!trimmed) {
+      flushParagraph()
+      flushList()
+    } else if (heading) {
+      flushParagraph()
+      flushList()
+      blocks.push({ type: 'heading', content: heading[1] })
+    } else if (bullet || numbered) {
+      flushParagraph()
+      list.push(bullet?.[1] || numbered[1])
+    } else {
+      flushList()
+      paragraph.push(trimmed)
+    }
+  })
+  flushParagraph()
+  flushList()
+
+  return (
+    <div className="agent-response">
+      {blocks.map((block, index) => {
+        if (block.type === 'heading') return <h4 key={index}>{renderInlineMarkdown(block.content)}</h4>
+        if (block.type === 'list') {
+          return <ul key={index}>{block.items.map((item, itemIndex) => <li key={itemIndex}>{renderInlineMarkdown(item)}</li>)}</ul>
+        }
+        return <p key={index}>{renderInlineMarkdown(block.content)}</p>
+      })}
+    </div>
+  )
+}
+
 function Toggle({ checked, onChange, label }) {
   return (
     <label className="toggle-row">
@@ -102,7 +169,12 @@ function RangeControl({ label, value, onChange }) {
 
 function ResultPanel({ result }) {
   if (!result) return null
-  const details = verdictDetails(result.verdict)
+  const hasFinancialAction = result.tool_calls_made?.some(({ tool_name: toolName }) => (
+    toolName === 'issue_refund' || toolName === 'apply_discount'
+  ))
+  const details = result.verdict === 'allow' && !hasFinancialAction
+    ? { label: 'No security threat · Verification pending', icon: Check, tone: 'allow' }
+    : verdictDetails(result.verdict)
   const Icon = details.icon
   return (
     <section className={`verdict verdict-${details.tone}`} aria-live="polite">
@@ -110,10 +182,15 @@ function ResultPanel({ result }) {
       <dl className="verdict-grid">
         <div><dt>Confidence score</dt><dd>{formatPercent(result.confidence)}</dd></div>
         <div><dt>Decision layer</dt><dd>{result.layer?.replaceAll('_', ' ') || 'none'}</dd></div>
-        <div><dt>Mandate compliance</dt><dd>{result.verdict === 'allow' ? 'Yes' : 'Violation'}</dd></div>
+        <div><dt>Mandate compliance</dt><dd>{result.verdict === 'allow' && !hasFinancialAction ? 'Pending verification' : result.verdict === 'allow' ? 'Yes' : 'Violation'}</dd></div>
       </dl>
       <p className="verdict-reason"><strong>Rationale</strong>{result.reason}</p>
-      {result.agent_response && <div className="agent-output"><span>Agent context output</span>{result.agent_response}</div>}
+      {result.agent_response && (
+        <div className="agent-output">
+          <span>Agent context output</span>
+          <AgentResponse content={result.agent_response} />
+        </div>
+      )}
       {!!result.tool_calls_made?.length && (
         <DetailsList title="Executed gateway actions" items={result.tool_calls_made} tone="allow" />
       )}

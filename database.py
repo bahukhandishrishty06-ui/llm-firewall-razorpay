@@ -91,6 +91,15 @@ def init_db():
                 applied_at TEXT,
                 reason TEXT
             );
+
+            CREATE TABLE IF NOT EXISTS verified_refund_evidence (
+                evidence_id TEXT PRIMARY KEY,
+                order_id TEXT NOT NULL,
+                customer_id TEXT NOT NULL,
+                verified_at TEXT NOT NULL,
+                verified_by TEXT NOT NULL,
+                status TEXT NOT NULL CHECK (status IN ('verified', 'rejected'))
+            );
         """)
 
 
@@ -148,6 +157,38 @@ def get_order(order_id: str) -> dict | None:
         if row:
             return dict(row)
     return None
+
+
+def record_verified_refund_evidence(evidence_id: str, order_id: str,
+                                    customer_id: str, verified_by: str) -> None:
+    """Record evidence accepted by a trusted, out-of-band verification service.
+
+    This function is deliberately not exposed as an agent tool or public API. A
+    customer message must never be able to mark its own refund evidence verified.
+    """
+    with get_connection() as conn:
+        conn.execute(
+            """INSERT OR REPLACE INTO verified_refund_evidence
+               (evidence_id, order_id, customer_id, verified_at, verified_by, status)
+               VALUES (?, ?, ?, ?, ?, 'verified')""",
+            (evidence_id, order_id, customer_id,
+             datetime.now(timezone.utc).isoformat(), verified_by),
+        )
+
+
+def get_verified_refund_evidence(evidence_id: str, order_id: str,
+                                 customer_id: str) -> dict | None:
+    """Return verified evidence only when it belongs to this order and customer."""
+    if not evidence_id or not customer_id:
+        return None
+    with get_connection() as conn:
+        row = conn.execute(
+            """SELECT * FROM verified_refund_evidence
+               WHERE evidence_id = ? AND order_id = ? AND customer_id = ?
+                 AND status = 'verified'""",
+            (evidence_id, order_id, customer_id),
+        ).fetchone()
+        return dict(row) if row else None
 
 
 def get_all_orders() -> list[dict]:

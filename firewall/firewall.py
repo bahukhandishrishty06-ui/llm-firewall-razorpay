@@ -14,6 +14,7 @@ Flow:
 import os
 import sys
 import json
+import re
 import uuid
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
@@ -25,6 +26,14 @@ from firewall.action_screener import screen_action, ActionScreeningResult, reset
 from agent.target_agent import TargetAgent
 from agent.tools import execute_tool
 from database import log_firewall_decision
+
+
+REFUND_REQUEST_PATTERN = re.compile(r"\b(refund|return)\b", re.IGNORECASE)
+
+
+def requires_refund_verification(user_message: str) -> bool:
+    """Keep refund requests out of the agent until trusted proof is available."""
+    return bool(REFUND_REQUEST_PATTERN.search(user_message))
 
 
 @dataclass
@@ -53,11 +62,13 @@ class PayGuardFirewall:
     """
 
     def __init__(self, api_key: str = None, block_threshold: float = 0.7,
-                 flag_threshold: float = 0.4, use_llm: bool = True):
+                 flag_threshold: float = 0.4, use_llm: bool = True,
+                 authenticated_customer_id: str = None):
         self.agent = TargetAgent(api_key=api_key)
         self.block_threshold = block_threshold
         self.flag_threshold = flag_threshold
         self.use_llm = use_llm
+        self.authenticated_customer_id = authenticated_customer_id
         self.session_id = str(uuid.uuid4())[:8]
 
     def new_session(self):
@@ -109,6 +120,26 @@ class PayGuardFirewall:
                     session_id=self.session_id,
                     timestamp=timestamp,
                 )
+
+        # A free-form chat message cannot supply trustworthy evidence or identity.
+        # Stop here and give the customer the next safe step instead of asking the
+        # LLM to infer complaint validity or propose a refund tool call.
+        if requires_refund_verification(user_message):
+            return FirewallResult(
+                verdict="flag_for_human",
+                confidence=0.75,
+                reason="Refund verification required before any refund can be assessed or executed",
+                layer="refund_verification",
+                agent_response=(
+                    "To review a refund request, please submit your order confirmation, "
+                    "clear photos of the damage, and a short description of the issue. "
+                    "A support reviewer must verify the evidence and your account before "
+                    "any refund can be considered."
+                ),
+                input_screening=input_result.to_dict() if input_result else None,
+                session_id=self.session_id,
+                timestamp=timestamp,
+            )
 
         # ─── Pass to Agent (get proposed actions) ──────────────────────
         try:
@@ -170,6 +201,7 @@ class PayGuardFirewall:
                 use_llm=self.use_llm,
                 block_threshold=self.block_threshold,
                 flag_threshold=self.flag_threshold,
+                authenticated_customer_id=self.authenticated_customer_id,
             )
             action_screenings.append(action_result.to_dict())
 

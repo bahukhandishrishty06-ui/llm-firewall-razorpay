@@ -11,16 +11,16 @@ import re
 import json
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone, timedelta
-from anthropic import Anthropic
+from groq import Groq
 from dotenv import load_dotenv
 
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from database import log_firewall_decision, get_order
+from database import log_firewall_decision, get_order, get_verified_refund_evidence
 
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
 
-FIREWALL_MODEL = os.getenv("FIREWALL_MODEL", "claude-haiku-3-20250414")
+FIREWALL_MODEL = os.getenv("FIREWALL_MODEL", "openai/gpt-oss-20b")
 
 
 @dataclass
@@ -48,6 +48,8 @@ POLICY = {
         "max_amount": 5000,  # ₹5,000
         "max_days": 30,  # Only within 30 days of purchase
         "requires_valid_complaint": True,
+        "requires_verified_evidence": True,
+        "requires_authenticated_customer": True,
         "max_per_session": 2,  # Max refunds per session
     },
     "discount": {
@@ -58,7 +60,8 @@ POLICY = {
 }
 
 
-def check_policy_rules(tool_name: str, tool_args: dict) -> tuple[list[str], float]:
+def check_policy_rules(tool_name: str, tool_args: dict,
+                       authenticated_customer_id: str = None) -> tuple[list[str], float]:
     """
     Check proposed tool call against hardcoded policy rules.
     Returns (list_of_violations, risk_score).
@@ -69,6 +72,7 @@ def check_policy_rules(tool_name: str, tool_args: dict) -> tuple[list[str], floa
     if tool_name == "issue_refund":
         amount = tool_args.get("amount", 0)
         order_id = tool_args.get("order_id", "")
+        evidence_id = tool_args.get("evidence_id", "")
 
         # Check amount limit
         if amount > POLICY["refund"]["max_amount"]:
@@ -85,6 +89,24 @@ def check_policy_rules(tool_name: str, tool_args: dict) -> tuple[list[str], floa
         # Check order details
         order = get_order(order_id)
         if order:
+            # The customer identity must come from authenticated application context,
+            # never from the model or a customer-provided message.
+            if POLICY["refund"]["requires_authenticated_customer"]:
+                if not authenticated_customer_id:
+                    violations.append("Refund requires an authenticated customer context")
+                    risk_score = max(risk_score, 0.95)
+                elif authenticated_customer_id != order.get("customer_id"):
+                    violations.append("Authenticated customer does not own this order")
+                    risk_score = max(risk_score, 0.95)
+
+            if POLICY["refund"]["requires_verified_evidence"]:
+                evidence = get_verified_refund_evidence(
+                    evidence_id, order_id, authenticated_customer_id
+                )
+                if not evidence:
+                    violations.append("Refund requires trusted, verified evidence linked to this order and customer")
+                    risk_score = max(risk_score, 0.95)
+
             # Check if order is within 30-day window
             try:
                 created_at = datetime.fromisoformat(order["created_at"])
@@ -194,11 +216,11 @@ Respond with ONLY a JSON object:
 def analyze_context(tool_name: str, tool_args: dict, conversation_history: list,
                     policy_violations: list, api_key: str = None) -> dict:
     """
-    Use Claude Haiku to analyze whether a proposed action is consistent
+    Use Groq to analyze whether a proposed action is consistent
     with the conversation context.
     """
     try:
-        client = Anthropic(api_key=api_key or os.getenv("ANTHROPIC_API_KEY"))
+        client = Groq(api_key=api_key or os.getenv("GROQ_API_KEY"))
 
         # Format conversation history
         conv_text = ""
@@ -233,13 +255,13 @@ def analyze_context(tool_name: str, tool_args: dict, conversation_history: list,
             violations=violations_text,
         )
 
-        response = client.messages.create(
+        response = client.chat.completions.create(
             model=FIREWALL_MODEL,
             max_tokens=500,
             messages=[{"role": "user", "content": prompt}],
         )
 
-        response_text = response.content[0].text.strip()
+        response_text = (response.choices[0].message.content or "").strip()
 
         # Parse JSON
         if response_text.startswith("```"):
@@ -313,7 +335,8 @@ def check_anomalies(tool_name: str, tool_args: dict, session_id: str = None) -> 
 
 def screen_action(tool_name: str, tool_args: dict, conversation_history: list = None,
                   session_id: str = None, use_llm: bool = True,
-                  block_threshold: float = None, flag_threshold: float = None) -> ActionScreeningResult:
+                  block_threshold: float = None, flag_threshold: float = None,
+                  authenticated_customer_id: str = None) -> ActionScreeningResult:
     """
     Screen a proposed tool call before execution.
 
@@ -325,6 +348,7 @@ def screen_action(tool_name: str, tool_args: dict, conversation_history: list = 
         use_llm: Whether to use LLM context analysis
         block_threshold: Override default block threshold
         flag_threshold: Override default flag threshold
+        authenticated_customer_id: Trusted identity supplied by application auth
 
     Returns:
         ActionScreeningResult with verdict, confidence, and reasoning
@@ -335,7 +359,9 @@ def screen_action(tool_name: str, tool_args: dict, conversation_history: list = 
     all_violations = []
 
     # Step 1: Policy rule check
-    policy_violations, policy_score = check_policy_rules(tool_name, tool_args)
+    policy_violations, policy_score = check_policy_rules(
+        tool_name, tool_args, authenticated_customer_id=authenticated_customer_id
+    )
     all_violations.extend(policy_violations)
 
     # Step 2: Anomaly detection
