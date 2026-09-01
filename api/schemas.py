@@ -72,6 +72,7 @@ class RedTeamCaseResult(BaseModel):
     reason: str
     layer: str
     heuristic_triggers: List[str] = Field(default_factory=list)
+    simulated_exposure_inr: int = Field(0, ge=0)
     passed: bool
 
 
@@ -82,6 +83,10 @@ class RedTeamRunResponse(BaseModel):
     allowed: int
     block_rate: float
     passed: int
+    potential_exposure_inr: int = Field(0, ge=0)
+    prevented_exposure_inr: int = Field(0, ge=0)
+    escaped_exposure_inr: int = Field(0, ge=0)
+    unsafe_gateway_actions_executed: int = Field(0, ge=0)
     cases: List[RedTeamCaseResult]
 
 

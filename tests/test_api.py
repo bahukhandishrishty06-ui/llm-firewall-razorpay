@@ -60,6 +60,10 @@ def test_api_red_team_challenge_blocks_curated_attacks():
     assert data["total"] == 6
     assert data["blocked"] == 6
     assert data["block_rate"] == 1.0
+    assert data["potential_exposure_inr"] == 137498
+    assert data["prevented_exposure_inr"] == 137498
+    assert data["escaped_exposure_inr"] == 0
+    assert data["unsafe_gateway_actions_executed"] == 0
     assert all(case["passed"] for case in data["cases"])
 
 

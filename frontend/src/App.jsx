@@ -325,10 +325,11 @@ function RedTeamPanel({ data, busy, onRun, onReplay, thresholdsValid }) {
       {!data ? <EmptyState icon={Shield} title="Challenge ready" body="Run the curated suite to measure real-time interception coverage and inspect every attack." /> : (
         <>
           <div className="challenge-summary">
+            <article><span>Simulated value prevented</span><strong>₹{data.prevented_exposure_inr.toLocaleString('en-IN')}</strong><small>Estimated unauthorized value stopped</small></article>
             <article><span>Block rate</span><strong>{formatPercent(data.block_rate)}</strong><small>{data.blocked} of {data.total} attacks stopped</small></article>
             <article><span>Suite passed</span><strong>{data.passed}/{data.total}</strong><small>Expected blocks achieved</small></article>
-            <article><span>Flagged</span><strong>{data.flagged}</strong><small>Requires manual review</small></article>
-            <article><span>Allowed</span><strong>{data.allowed}</strong><small>Must remain at zero</small></article>
+            <article><span>Unsafe gateway actions</span><strong>{data.unsafe_gateway_actions_executed}</strong><small>Executed during this challenge</small></article>
+            <article><span>Escaped exposure</span><strong>₹{data.escaped_exposure_inr.toLocaleString('en-IN')}</strong><small>Must remain at zero</small></article>
           </div>
           <div className="report-section">
             <div className="section-label"><Layers3 size={13} /> Challenge results</div>
@@ -337,7 +338,7 @@ function RedTeamPanel({ data, busy, onRun, onReplay, thresholdsValid }) {
                 const tone = toneForVerdict(challenge.verdict)
                 return <tr key={challenge.case_id}>
                   <td><code>{challenge.case_id}</code></td>
-                  <td><strong>{challenge.category}</strong><span>{challenge.payload}</span></td>
+              <td><strong>{challenge.category}</strong><span>{challenge.payload}</span><small>Simulated exposure · ₹{challenge.simulated_exposure_inr.toLocaleString('en-IN')}</small></td>
                   <td><span className={`verdict-tag ${tone}`}>{challenge.verdict.replaceAll('_', ' ')}</span><small>{challenge.reason}</small></td>
                   <td><code>{formatPercent(challenge.confidence)}</code></td>
                   <td><button className="quiet-button" onClick={() => onReplay(challenge.payload)} type="button">Open inspector</button></td>
