@@ -203,6 +203,19 @@ pre { overflow-x: auto; margin: 0; border-top: 1px solid var(--rule); padding: 1
 .metric-card > span { display: block; padding-bottom: 8px; border-bottom: 1px solid var(--rule); color: #66717a; font-family: 'JetBrains Mono', monospace; font-size: .66rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
 .metric-card strong { display: block; margin-top: 13px; color: var(--navy-deep); font-family: 'JetBrains Mono', monospace; font-size: clamp(1.35rem, 2.4vw, 1.75rem); letter-spacing: -.05em; }.metric-card strong.green { color: var(--green); }.metric-card strong.violet { color: var(--violet); }
 .metric-card small { display: block; margin-top: 5px; color: #7d8586; font-size: .68rem; }
+.challenge-summary { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px; margin-top: 22px; }
+.challenge-summary article { padding: 15px; border: 1px solid var(--rule); border-top: 3px solid var(--navy); border-radius: 3px; background: rgba(255,254,250,.8); }
+.challenge-summary article:first-child { border-top-color: var(--green); }.challenge-summary article:last-child { border-top-color: var(--red); }
+.challenge-summary span, .challenge-summary small { display: block; color: #66717a; font-family: 'JetBrains Mono', monospace; font-size: .62rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; }
+.challenge-summary strong { display: block; margin-top: 9px; color: var(--navy-deep); font-family: 'JetBrains Mono', monospace; font-size: 1.45rem; letter-spacing: -.05em; }
+.challenge-summary small { margin-top: 5px; color: #7d8586; font-family: 'Inter', sans-serif; font-size: .66rem; font-weight: 400; letter-spacing: 0; text-transform: none; }
+.challenge-table td { vertical-align: top; white-space: normal; }
+.challenge-table td:nth-child(1), .challenge-table td:nth-child(4), .challenge-table td:nth-child(5) { white-space: nowrap; }
+.challenge-table td > strong, .challenge-table td > span, .challenge-table td > small { display: block; }
+.challenge-table td > span:not(.verdict-tag) { max-width: 420px; margin-top: 4px; color: #647078; font-size: .68rem; line-height: 1.45; }
+.challenge-table small { max-width: 290px; margin-top: 5px; color: #7d8586; font-size: .64rem; line-height: 1.4; }
+.verdict-tag { display: inline-flex !important; border: 1px solid currentColor; border-radius: 2px; padding: 3px 5px; font-family: 'JetBrains Mono', monospace; font-size: .59rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.verdict-tag.allow { color: #1e644a; background: #ddede3; }.verdict-tag.block { color: #923b33; background: #f3dcd8; }.verdict-tag.flag { color: #80551f; background: #f4e6ca; }
 .report-section { margin-top: 26px; }
 .table-wrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 3px; }
 table { width: 100%; border-collapse: collapse; background: rgba(255,254,250,.72); font-size: .72rem; }
@@ -234,6 +247,7 @@ footer { display: flex; justify-content: space-between; gap: 20px; margin-top: 4
   .app-shell { grid-template-columns: 250px minmax(0,1fr); }
   .main { padding-inline: 30px; }
   .metric-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .challenge-summary { grid-template-columns: repeat(2, minmax(0,1fr)); }
 }
 @media (max-width: 760px) {
   .app-shell { display: block; }
@@ -243,11 +257,13 @@ footer { display: flex; justify-content: space-between; gap: 20px; margin-top: 4
   .main { padding: 25px 18px; }
   .masthead-row { align-items: flex-start; flex-direction: column; gap: 15px; }.meta-badges { justify-content: flex-start; }
   .comparison-grid, .audit-grid { grid-template-columns: 1fr; }
+  .challenge-summary { grid-template-columns: 1fr 1fr; }
   .verdict-grid { grid-template-columns: 1fr 1fr; }.verdict-reason { grid-template-columns: 1fr; gap: 4px; }
   footer { flex-direction: column; gap: 6px; }
 }
 @media (max-width: 480px) {
   .metric-grid { grid-template-columns: 1fr; }
+  .challenge-summary { grid-template-columns: 1fr; }
   .tabs button { padding-inline: 9px; }.tabs button svg { display: none; }
   .verdict-grid { grid-template-columns: 1fr; }
 }

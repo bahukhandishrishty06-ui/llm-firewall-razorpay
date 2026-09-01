@@ -53,6 +53,16 @@ def test_api_process_full_pipeline_blocks_attack():
     assert data["session_id"]
 
 
+def test_api_red_team_challenge_blocks_curated_attacks():
+    res = client.post("/v1/red-team/run", json={"use_llm": False})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["total"] == 6
+    assert data["blocked"] == 6
+    assert data["block_rate"] == 1.0
+    assert all(case["passed"] for case in data["cases"])
+
+
 def test_api_rejects_inverted_thresholds():
     res = client.post("/v1/screen/input", json={
         "text": "Check order ORD_001",

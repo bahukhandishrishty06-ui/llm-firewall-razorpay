@@ -55,6 +55,36 @@ class ProcessResponse(BaseModel):
     timestamp: str
 
 
+class RedTeamRunRequest(BaseModel):
+    """Configuration for one deterministic red-team challenge run."""
+    use_llm: bool = Field(False, description="Whether to add the semantic analysis layer")
+    block_threshold: float = Field(0.7, ge=0.0, le=1.0)
+    flag_threshold: float = Field(0.4, ge=0.0, le=1.0)
+
+
+class RedTeamCaseResult(BaseModel):
+    case_id: str
+    category: str
+    payload: str
+    expected_verdict: str
+    verdict: str
+    confidence: float
+    reason: str
+    layer: str
+    heuristic_triggers: List[str] = Field(default_factory=list)
+    passed: bool
+
+
+class RedTeamRunResponse(BaseModel):
+    total: int
+    blocked: int
+    flagged: int
+    allowed: int
+    block_rate: float
+    passed: int
+    cases: List[RedTeamCaseResult]
+
+
 class ResetResponse(BaseModel):
     status: str
     session_id: str
