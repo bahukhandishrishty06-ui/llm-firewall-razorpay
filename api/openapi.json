@@ -139,6 +139,271 @@
         }
       }
     },
+    "/v1/demo/razorpay/config": {
+      "get": {
+        "summary": "Razorpay Test Config",
+        "description": "Expose the public Test Mode key ID only; the secret never leaves the server.",
+        "operationId": "razorpay_test_config_v1_demo_razorpay_config_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RazorpayTestConfigResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/demo/razorpay/payment-order": {
+      "post": {
+        "summary": "Create Razorpay Test Payment",
+        "description": "Create a server-side Razorpay Test Mode order for a Checkout demonstration.",
+        "operationId": "create_razorpay_test_payment_v1_demo_razorpay_payment_order_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTestPaymentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateTestPaymentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/demo/razorpay/payment-verify": {
+      "post": {
+        "summary": "Verify Razorpay Test Payment",
+        "description": "Verify Checkout's signature and capture state before accepting a payment.",
+        "operationId": "verify_razorpay_test_payment_v1_demo_razorpay_payment_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyTestPaymentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentSessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/demo/refunds/request": {
+      "post": {
+        "summary": "Request Demo Refund",
+        "description": "Create a refund review request; this does not contact Razorpay.",
+        "operationId": "request_demo_refund_v1_demo_refunds_request_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRefundReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundRequestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/demo/refunds/{request_id}/review": {
+      "post": {
+        "summary": "Review Demo Refund",
+        "description": "Demo-only human-review step. Production must replace this with staff authentication.",
+        "operationId": "review_demo_refund_v1_demo_refunds__request_id__review_post",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewRefundRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundRequestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/demo/refunds/{request_id}/execute": {
+      "post": {
+        "summary": "Execute Demo Refund",
+        "description": "The only route that can call Razorpay's Test Mode refund API.",
+        "operationId": "execute_demo_refund_v1_demo_refunds__request_id__execute_post",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundRequestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/red-team/run": {
+      "post": {
+        "summary": "Run Red Team Challenge",
+        "description": "Run curated adversarial prompts against the same Layer 1 guardrails.",
+        "operationId": "run_red_team_challenge_v1_red_team_run_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedTeamRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedTeamRunResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/session/reset": {
       "post": {
         "summary": "Reset Session Endpoint",
@@ -270,6 +535,26 @@
           }
         }
       }
+    },
+    "/v1/telemetry/metrics": {
+      "get": {
+        "summary": "Telemetry Metrics Endpoint",
+        "operationId": "telemetry_metrics_endpoint_v1_telemetry_metrics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Telemetry Metrics Endpoint V1 Telemetry Metrics Get"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -337,6 +622,91 @@
         ],
         "title": "ActionScreenResponse"
       },
+      "CreateRefundReviewRequest": {
+        "properties": {
+          "local_order_id": {
+            "type": "string",
+            "title": "Local Order Id"
+          },
+          "amount_inr": {
+            "type": "integer",
+            "maximum": 5000.0,
+            "minimum": 1.0,
+            "title": "Amount Inr"
+          },
+          "evidence_summary": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 10,
+            "title": "Evidence Summary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "local_order_id",
+          "amount_inr",
+          "evidence_summary"
+        ],
+        "title": "CreateRefundReviewRequest"
+      },
+      "CreateTestPaymentRequest": {
+        "properties": {
+          "amount_inr": {
+            "type": "integer",
+            "maximum": 5000.0,
+            "minimum": 1.0,
+            "title": "Amount Inr",
+            "default": 500
+          },
+          "customer_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Customer Id",
+            "default": "CUST_101"
+          }
+        },
+        "type": "object",
+        "title": "CreateTestPaymentRequest"
+      },
+      "CreateTestPaymentResponse": {
+        "properties": {
+          "local_order_id": {
+            "type": "string",
+            "title": "Local Order Id"
+          },
+          "razorpay_order_id": {
+            "type": "string",
+            "title": "Razorpay Order Id"
+          },
+          "key_id": {
+            "type": "string",
+            "title": "Key Id"
+          },
+          "amount_paise": {
+            "type": "integer",
+            "title": "Amount Paise"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "local_order_id",
+          "razorpay_order_id",
+          "key_id",
+          "amount_paise",
+          "currency",
+          "status"
+        ],
+        "title": "CreateTestPaymentResponse"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -372,6 +742,56 @@
           "timestamp"
         ],
         "title": "HealthResponse"
+      },
+      "PaymentSessionResponse": {
+        "properties": {
+          "local_order_id": {
+            "type": "string",
+            "title": "Local Order Id"
+          },
+          "razorpay_order_id": {
+            "type": "string",
+            "title": "Razorpay Order Id"
+          },
+          "razorpay_payment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Razorpay Payment Id"
+          },
+          "amount_paise": {
+            "type": "integer",
+            "title": "Amount Paise"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "verified_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "local_order_id",
+          "razorpay_order_id",
+          "amount_paise",
+          "status"
+        ],
+        "title": "PaymentSessionResponse"
       },
       "ProcessRequest": {
         "properties": {
@@ -487,6 +907,302 @@
         ],
         "title": "ProcessResponse"
       },
+      "RazorpayTestConfigResponse": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled",
+          "message"
+        ],
+        "title": "RazorpayTestConfigResponse"
+      },
+      "RedTeamCaseResult": {
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "title": "Case Id"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "payload": {
+            "type": "string",
+            "title": "Payload"
+          },
+          "expected_verdict": {
+            "type": "string",
+            "title": "Expected Verdict"
+          },
+          "verdict": {
+            "type": "string",
+            "title": "Verdict"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "layer": {
+            "type": "string",
+            "title": "Layer"
+          },
+          "heuristic_triggers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Heuristic Triggers"
+          },
+          "simulated_exposure_inr": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Simulated Exposure Inr",
+            "default": 0
+          },
+          "passed": {
+            "type": "boolean",
+            "title": "Passed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_id",
+          "category",
+          "payload",
+          "expected_verdict",
+          "verdict",
+          "confidence",
+          "reason",
+          "layer",
+          "passed"
+        ],
+        "title": "RedTeamCaseResult"
+      },
+      "RedTeamRunRequest": {
+        "properties": {
+          "use_llm": {
+            "type": "boolean",
+            "title": "Use Llm",
+            "description": "Whether to add the semantic analysis layer",
+            "default": false
+          },
+          "block_threshold": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Block Threshold",
+            "default": 0.7
+          },
+          "flag_threshold": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Flag Threshold",
+            "default": 0.4
+          }
+        },
+        "type": "object",
+        "title": "RedTeamRunRequest",
+        "description": "Configuration for one deterministic red-team challenge run."
+      },
+      "RedTeamRunResponse": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "blocked": {
+            "type": "integer",
+            "title": "Blocked"
+          },
+          "flagged": {
+            "type": "integer",
+            "title": "Flagged"
+          },
+          "allowed": {
+            "type": "integer",
+            "title": "Allowed"
+          },
+          "block_rate": {
+            "type": "number",
+            "title": "Block Rate"
+          },
+          "passed": {
+            "type": "integer",
+            "title": "Passed"
+          },
+          "potential_exposure_inr": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Potential Exposure Inr",
+            "default": 0
+          },
+          "prevented_exposure_inr": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Prevented Exposure Inr",
+            "default": 0
+          },
+          "escaped_exposure_inr": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Escaped Exposure Inr",
+            "default": 0
+          },
+          "unsafe_gateway_actions_executed": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Unsafe Gateway Actions Executed",
+            "default": 0
+          },
+          "cases": {
+            "items": {
+              "$ref": "#/components/schemas/RedTeamCaseResult"
+            },
+            "type": "array",
+            "title": "Cases"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "blocked",
+          "flagged",
+          "allowed",
+          "block_rate",
+          "passed",
+          "cases"
+        ],
+        "title": "RedTeamRunResponse"
+      },
+      "RefundRequestResponse": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          },
+          "order_id": {
+            "type": "string",
+            "title": "Order Id"
+          },
+          "amount_paise": {
+            "type": "integer",
+            "title": "Amount Paise"
+          },
+          "evidence_summary": {
+            "type": "string",
+            "title": "Evidence Summary"
+          },
+          "evidence_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "reviewer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer"
+          },
+          "review_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Note"
+          },
+          "razorpay_refund_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Razorpay Refund Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "executed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Executed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "request_id",
+          "order_id",
+          "amount_paise",
+          "evidence_summary",
+          "status",
+          "created_at"
+        ],
+        "title": "RefundRequestResponse"
+      },
       "ResetResponse": {
         "properties": {
           "status": {
@@ -504,6 +1220,26 @@
           "session_id"
         ],
         "title": "ResetResponse"
+      },
+      "ReviewRefundRequest": {
+        "properties": {
+          "approved": {
+            "type": "boolean",
+            "title": "Approved"
+          },
+          "review_note": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 3,
+            "title": "Review Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "approved",
+          "review_note"
+        ],
+        "title": "ReviewRefundRequest"
       },
       "ScreenRequest": {
         "properties": {
@@ -635,6 +1371,34 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VerifyTestPaymentRequest": {
+        "properties": {
+          "local_order_id": {
+            "type": "string",
+            "title": "Local Order Id"
+          },
+          "razorpay_payment_id": {
+            "type": "string",
+            "title": "Razorpay Payment Id"
+          },
+          "razorpay_order_id": {
+            "type": "string",
+            "title": "Razorpay Order Id"
+          },
+          "razorpay_signature": {
+            "type": "string",
+            "title": "Razorpay Signature"
+          }
+        },
+        "type": "object",
+        "required": [
+          "local_order_id",
+          "razorpay_payment_id",
+          "razorpay_order_id",
+          "razorpay_signature"
+        ],
+        "title": "VerifyTestPaymentRequest"
       }
     }
   }
