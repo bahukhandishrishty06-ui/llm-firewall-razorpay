@@ -135,6 +135,8 @@ cp .env.example .env
 #   GROQ_API_KEY=gsk_...
 #   RAZORPAY_KEY_ID=rzp_test_...
 #   RAZORPAY_KEY_SECRET=...
+#   RAZORPAY_TEST_MODE=true
+#   ALLOW_RAZORPAY_TEST_REFUND=false  # enable only when you are ready to click a Test Mode refund
 ```
 
 ### 3. Run Development Commands via Makefile
@@ -146,6 +148,28 @@ make eval        # Run held-out evaluation & FP cost report
 make api         # Start FastAPI on http://localhost:8000
 make frontend    # Start React on http://localhost:5173 (second terminal)
 make run         # Build and run both services with Docker Compose
+```
+
+### Razorpay Test Mode walkthrough
+
+The React console includes a **Test Mode Gateway** tab. It keeps the payment and
+refund actions separate from the conversational demo:
+
+1. Start a ₹500 Test Mode Checkout. This is the first point a Razorpay order is created.
+2. Complete a Razorpay sandbox payment. PayGuard verifies its Checkout signature,
+   captured state, and amount on the server.
+3. Submit an evidence summary, then approve or reject it in the clearly marked
+   demo reviewer step.
+4. Click **Execute Test Mode refund** only after approval. PayGuard re-runs the
+   Layer 2 refund policy before sending one idempotent refund request to Razorpay.
+
+The secret key is never sent to the browser. Test Mode only is accepted, and API
+startup/test fixtures never create Razorpay orders. For a local run without Docker,
+start the two commands below in separate terminals:
+
+```bash
+uvicorn api.server:app --reload --port 8000
+cd frontend && npm run dev
 ```
 
 ---

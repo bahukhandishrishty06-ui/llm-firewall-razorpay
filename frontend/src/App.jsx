@@ -32,6 +32,7 @@ const TEST_VECTORS = [
 
 const TABS = [
   ['inspector', 'Live Inspector', Activity],
+  ['gateway', 'Test Mode Gateway', ShieldCheck],
   ['red-team', 'Red-Team Challenge', Shield],
   ['comparison', 'Comparative Analysis', GitCompareArrows],
   ['metrics', 'Empirical Metrics', BarChart3],
@@ -46,6 +47,23 @@ async function api(path, options = {}) {
   const payload = await response.json().catch(() => ({}))
   if (!response.ok) throw new Error(payload.detail || 'The PayGuard service could not complete this request.')
   return payload
+}
+
+let razorpayCheckoutLoader
+
+function loadRazorpayCheckout() {
+  if (window.Razorpay) return Promise.resolve()
+  if (razorpayCheckoutLoader) return razorpayCheckoutLoader
+
+  razorpayCheckoutLoader = new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    script.async = true
+    script.onload = resolve
+    script.onerror = () => reject(new Error('Razorpay Checkout could not be loaded. Check your connection and try again.'))
+    document.head.appendChild(script)
+  })
+  return razorpayCheckoutLoader
 }
 
 function formatPercent(value = 0) {
@@ -352,6 +370,67 @@ function RedTeamPanel({ data, busy, onRun, onReplay, thresholdsValid }) {
   )
 }
 
+function RazorpayTestPanel({ config, payment, refund, busy, onStartCheckout, onSubmitEvidence, onReview, onExecute }) {
+  const [evidence, setEvidence] = useState('')
+  const [reviewNote, setReviewNote] = useState('Evidence and order ownership checked in the demo reviewer queue.')
+  const captured = payment?.status === 'captured'
+  const refundPending = refund?.status === 'pending_review'
+  const refundApproved = refund?.status === 'approved' || refund?.status === 'gateway_error'
+  const refundExecuted = refund?.status === 'executed'
+
+  return (
+    <section className="tab-panel gateway-panel">
+      <div className="intro-row">
+        <div>
+          <div className="section-label"><ShieldCheck size={13} /> Razorpay Test Mode · safeguarded path</div>
+          <p className="section-intro">This is a deliberately gated sandbox workflow. Checkout is created only when you start it; a refund is sent only after server-side payment verification, evidence review, and PayGuard policy approval.</p>
+        </div>
+        <span className={`gateway-status ${config?.enabled ? 'enabled' : 'disabled'}`}>{config?.enabled ? 'Test Mode ready' : 'Test Mode unavailable'}</span>
+      </div>
+
+      {!config?.enabled ? (
+        <EmptyState icon={AlertCircle} title="Razorpay Test Mode is not configured" body={config?.message || 'Set Test Mode credentials on the server, then refresh this page.'} />
+      ) : (
+        <>
+          <div className="gateway-guardrail"><Shield size={16} /><span><strong>Sandbox only.</strong> The public Test Mode key is used for Checkout; the secret stays on the server. No gateway call happens simply by opening this tab.</span></div>
+          <ol className="gateway-steps">
+            <li className={payment ? 'complete' : ''}><span>1</span><div><strong>Create and pay</strong><small>Server creates a Test Mode order; Razorpay Checkout collects a sandbox payment.</small></div></li>
+            <li className={captured ? 'complete' : ''}><span>2</span><div><strong>Verify capture</strong><small>Server validates the Checkout signature, payment status, and amount.</small></div></li>
+            <li className={refund ? 'complete' : ''}><span>3</span><div><strong>Review proof</strong><small>Evidence is recorded and the demo reviewer explicitly approves or rejects it.</small></div></li>
+            <li className={refundExecuted ? 'complete' : ''}><span>4</span><div><strong>Policy-gated refund</strong><small>PayGuard re-screens the approved request before Razorpay receives it.</small></div></li>
+          </ol>
+
+          <div className="gateway-card">
+            <div><span className="section-label">Step 1 · Test checkout</span><h3>₹500 protected payment</h3><p>Use a Razorpay Test Mode payment method. The server accepts it only after signature and capture verification.</p></div>
+            <button className="primary-button" disabled={!!busy || captured} onClick={onStartCheckout} type="button">
+              {busy === 'checkout' ? <RefreshCw className="spin" size={15} /> : <Send size={15} />}
+              {captured ? 'Payment verified' : busy === 'checkout' ? 'Opening Checkout…' : 'Start Test Mode checkout'}
+            </button>
+          </div>
+
+          {payment && <div className="gateway-record"><span>Payment session</span><code>{payment.local_order_id}</code><span>Status · {payment.status}</span>{payment.razorpay_payment_id && <code>{payment.razorpay_payment_id}</code>}</div>}
+
+          {captured && !refund && (
+            <form className="gateway-card proof-form" onSubmit={(event) => { event.preventDefault(); onSubmitEvidence(evidence) }}>
+              <div><span className="section-label">Step 2 · Evidence request</span><h3>Submit proof for review</h3><p>This is intentionally separate from the customer message. In a production build, replace this demo summary with authenticated uploads and reviewer identity.</p></div>
+              <label className="input-label" htmlFor="proof-summary">Evidence summary (demo)</label>
+              <textarea id="proof-summary" minLength="10" onChange={(event) => setEvidence(event.target.value)} placeholder="Example: Two photos show a cracked enclosure; customer identity and delivery address matched the order." required rows="3" value={evidence} />
+              <button className="primary-button" disabled={!!busy || evidence.trim().length < 10} type="submit">{busy === 'proof' ? 'Submitting…' : 'Send to reviewer'}</button>
+            </form>
+          )}
+
+          {refund && <div className="gateway-card review-card">
+            <div><span className="section-label">Step 3 · Review decision</span><h3>Refund request · ₹{(refund.amount_paise / 100).toLocaleString('en-IN')}</h3><p>{refund.evidence_summary}</p><dl><div><dt>Request ID</dt><dd><code>{refund.request_id}</code></dd></div><div><dt>Status</dt><dd>{refund.status.replaceAll('_', ' ')}</dd></div>{refund.evidence_id && <div><dt>Verified evidence</dt><dd><code>{refund.evidence_id}</code></dd></div>}</dl></div>
+            {refundPending && <div className="review-controls"><label className="input-label" htmlFor="review-note">Reviewer note</label><textarea id="review-note" minLength="3" onChange={(event) => setReviewNote(event.target.value)} rows="3" value={reviewNote} /><div><button className="primary-button" disabled={!!busy || reviewNote.trim().length < 3} onClick={() => onReview(true, reviewNote)} type="button">Approve proof</button><button className="secondary-button" disabled={!!busy || reviewNote.trim().length < 3} onClick={() => onReview(false, reviewNote)} type="button">Reject proof</button></div></div>}
+            {refundApproved && <div className="execution-control"><p>Approval does not trigger the refund. The following button is the final, explicit Test Mode gateway action.</p><button className="primary-button" disabled={!!busy} onClick={onExecute} type="button">{busy === 'refund' ? <RefreshCw className="spin" size={15} /> : <ShieldCheck size={15} />}{busy === 'refund' ? 'Rechecking policy…' : 'Execute Test Mode refund'}</button></div>}
+            {refundExecuted && <div className="success-note"><Check size={16} /> Test refund executed and recorded.<code>{refund.razorpay_refund_id}</code></div>}
+          </div>}
+        </>
+      )}
+    </section>
+  )
+}
+
 function App() {
   const [activeTab, setActiveTab] = useState('inspector')
   const [useLlm, setUseLlm] = useState(false)
@@ -367,6 +446,9 @@ function App() {
   const [decisions, setDecisions] = useState([])
   const [actions, setActions] = useState([])
   const [serviceStatus, setServiceStatus] = useState('checking')
+  const [gatewayConfig, setGatewayConfig] = useState(null)
+  const [testPayment, setTestPayment] = useState(null)
+  const [testRefund, setTestRefund] = useState(null)
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
 
@@ -384,6 +466,7 @@ function App() {
   useEffect(() => {
     api('/health').then(() => setServiceStatus('active')).catch(() => setServiceStatus('offline'))
     api('/v1/evaluation/results').then(setMetrics).catch(() => setMetrics(null))
+    api('/v1/demo/razorpay/config').then(setGatewayConfig).catch(() => setGatewayConfig({ enabled: false, message: 'Unable to reach the Test Mode configuration endpoint.' }))
     loadAudit().catch(() => {})
   }, [loadAudit])
 
@@ -441,6 +524,98 @@ function App() {
         body: JSON.stringify(commonPayload),
       })
       setRedTeam(challenge)
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setBusy('')
+    }
+  }
+
+  async function startTestCheckout() {
+    setBusy('checkout')
+    setError('')
+    try {
+      const checkout = await api('/v1/demo/razorpay/payment-order', {
+        method: 'POST',
+        body: JSON.stringify({ amount_inr: 500, customer_id: 'CUST_101' }),
+      })
+      setTestPayment(checkout)
+      await loadRazorpayCheckout()
+      const instance = new window.Razorpay({
+        key: checkout.key_id,
+        amount: checkout.amount_paise,
+        currency: checkout.currency,
+        name: 'PayGuard · Test Mode',
+        description: 'Protected refund demonstration',
+        order_id: checkout.razorpay_order_id,
+        handler: async (response) => {
+          try {
+            setBusy('verification')
+            const verified = await api('/v1/demo/razorpay/payment-verify', {
+              method: 'POST',
+              body: JSON.stringify({ local_order_id: checkout.local_order_id, ...response }),
+            })
+            setTestPayment(verified)
+          } catch (requestError) {
+            setError(requestError.message)
+          } finally {
+            setBusy('')
+          }
+        },
+        modal: { ondismiss: () => setBusy('') },
+        theme: { color: '#28445e' },
+      })
+      instance.open()
+    } catch (requestError) {
+      setError(requestError.message)
+      setBusy('')
+    }
+  }
+
+  async function submitEvidence(evidenceSummary) {
+    if (!testPayment) return
+    setBusy('proof')
+    setError('')
+    try {
+      const refund = await api('/v1/demo/refunds/request', {
+        method: 'POST',
+        body: JSON.stringify({ local_order_id: testPayment.local_order_id, amount_inr: 500, evidence_summary: evidenceSummary.trim() }),
+      })
+      setTestRefund(refund)
+      loadAudit().catch(() => {})
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setBusy('')
+    }
+  }
+
+  async function reviewRefund(approved, reviewNote) {
+    if (!testRefund) return
+    setBusy('review')
+    setError('')
+    try {
+      const reviewed = await api(`/v1/demo/refunds/${testRefund.request_id}/review`, {
+        method: 'POST',
+        body: JSON.stringify({ approved, review_note: reviewNote.trim() }),
+      })
+      setTestRefund(reviewed)
+      loadAudit().catch(() => {})
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setBusy('')
+    }
+  }
+
+  async function executeRefund() {
+    if (!testRefund) return
+    setBusy('refund')
+    setError('')
+    try {
+      const executed = await api(`/v1/demo/refunds/${testRefund.request_id}/execute`, { method: 'POST', body: '{}' })
+      setTestRefund(executed)
+      loadAudit().catch(() => {})
     } catch (requestError) {
       setError(requestError.message)
     } finally {
@@ -571,6 +746,8 @@ function App() {
             )}
           </section>
         )}
+
+        {activeTab === 'gateway' && <RazorpayTestPanel config={gatewayConfig} payment={testPayment} refund={testRefund} busy={busy} onStartCheckout={startTestCheckout} onSubmitEvidence={submitEvidence} onReview={reviewRefund} onExecute={executeRefund} />}
 
         {activeTab === 'red-team' && (
           <RedTeamPanel

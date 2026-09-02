@@ -90,6 +90,68 @@ class RedTeamRunResponse(BaseModel):
     cases: List[RedTeamCaseResult]
 
 
+class RazorpayTestConfigResponse(BaseModel):
+    enabled: bool
+    key_id: Optional[str] = None
+    message: str
+
+
+class CreateTestPaymentRequest(BaseModel):
+    amount_inr: int = Field(500, ge=1, le=5000)
+    customer_id: str = Field("CUST_101", min_length=1, max_length=100)
+
+
+class CreateTestPaymentResponse(BaseModel):
+    local_order_id: str
+    razorpay_order_id: str
+    key_id: str
+    amount_paise: int
+    currency: str
+    status: str
+
+
+class VerifyTestPaymentRequest(BaseModel):
+    local_order_id: str
+    razorpay_payment_id: str
+    razorpay_order_id: str
+    razorpay_signature: str
+
+
+class PaymentSessionResponse(BaseModel):
+    local_order_id: str
+    razorpay_order_id: str
+    razorpay_payment_id: Optional[str] = None
+    amount_paise: int
+    status: str
+    verified_at: Optional[str] = None
+
+
+class CreateRefundReviewRequest(BaseModel):
+    local_order_id: str
+    amount_inr: int = Field(..., ge=1, le=5000)
+    evidence_summary: str = Field(..., min_length=10, max_length=1000)
+
+
+class ReviewRefundRequest(BaseModel):
+    approved: bool
+    review_note: str = Field(..., min_length=3, max_length=500)
+
+
+class RefundRequestResponse(BaseModel):
+    request_id: str
+    order_id: str
+    amount_paise: int
+    evidence_summary: str
+    evidence_id: Optional[str] = None
+    status: str
+    reviewer: Optional[str] = None
+    review_note: Optional[str] = None
+    razorpay_refund_id: Optional[str] = None
+    created_at: str
+    reviewed_at: Optional[str] = None
+    executed_at: Optional[str] = None
+
+
 class ResetResponse(BaseModel):
     status: str
     session_id: str

@@ -321,10 +321,13 @@ def execute_tool(tool_name: str, tool_args: dict, session_id: str = None) -> dic
 
 # ─── Seed Data ─────────────────────────────────────────────────────────────────
 
-def seed_test_orders():
+def seed_test_orders(sync_razorpay: bool = False):
     """
-    Create test orders in local DB (and optionally in Razorpay test mode).
-    These provide realistic order data for the agent to work with.
+    Create local fixture orders for the agent to work with.
+
+    Razorpay orders are deliberately *not* created by default. Starting the API
+    or running a test suite must never create gateway state. Passing
+    ``sync_razorpay=True`` is reserved for an explicit, manual Test Mode setup.
     """
     now = datetime.now(timezone.utc)
 
@@ -419,9 +422,9 @@ def seed_test_orders():
         },
     ]
 
-    # Create Razorpay orders if client is available
+    # Only an explicitly requested Test Mode setup may create remote orders.
     for order in test_orders:
-        if razorpay_client:
+        if sync_razorpay and razorpay_client:
             try:
                 rz_order = razorpay_client.order.create({
                     "amount": order["amount"],

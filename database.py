@@ -100,6 +100,34 @@ def init_db():
                 verified_by TEXT NOT NULL,
                 status TEXT NOT NULL CHECK (status IN ('verified', 'rejected'))
             );
+
+            CREATE TABLE IF NOT EXISTS payment_sessions (
+                local_order_id TEXT PRIMARY KEY,
+                razorpay_order_id TEXT NOT NULL UNIQUE,
+                razorpay_payment_id TEXT UNIQUE,
+                amount_paise INTEGER NOT NULL,
+                status TEXT NOT NULL CHECK (status IN ('created', 'captured', 'failed')),
+                created_at TEXT NOT NULL,
+                verified_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS refund_requests (
+                request_id TEXT PRIMARY KEY,
+                order_id TEXT NOT NULL,
+                customer_id TEXT NOT NULL,
+                razorpay_payment_id TEXT NOT NULL,
+                amount_paise INTEGER NOT NULL,
+                evidence_summary TEXT NOT NULL,
+                evidence_id TEXT,
+                status TEXT NOT NULL CHECK (status IN ('pending_review', 'approved', 'rejected', 'executing', 'gateway_error', 'executed')),
+                reviewer TEXT,
+                review_note TEXT,
+                idempotency_key TEXT NOT NULL UNIQUE,
+                razorpay_refund_id TEXT,
+                created_at TEXT NOT NULL,
+                reviewed_at TEXT,
+                executed_at TEXT
+            );
         """)
 
 
@@ -189,6 +217,140 @@ def get_verified_refund_evidence(evidence_id: str, order_id: str,
             (evidence_id, order_id, customer_id),
         ).fetchone()
         return dict(row) if row else None
+
+
+def create_payment_session(local_order_id: str, razorpay_order_id: str,
+                           amount_paise: int) -> dict:
+    """Persist a server-created Razorpay Test Mode order before Checkout opens."""
+    now = datetime.now(timezone.utc).isoformat()
+    with get_connection() as conn:
+        conn.execute(
+            """INSERT INTO payment_sessions
+               (local_order_id, razorpay_order_id, amount_paise, status, created_at)
+               VALUES (?, ?, ?, 'created', ?)""",
+            (local_order_id, razorpay_order_id, amount_paise, now),
+        )
+    return get_payment_session(local_order_id)
+
+
+def get_payment_session(local_order_id: str) -> dict | None:
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT * FROM payment_sessions WHERE local_order_id = ?", (local_order_id,)
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def mark_payment_captured(local_order_id: str, razorpay_payment_id: str) -> dict:
+    with get_connection() as conn:
+        conn.execute(
+            """UPDATE payment_sessions
+               SET razorpay_payment_id = ?, status = 'captured', verified_at = ?
+               WHERE local_order_id = ?""",
+            (razorpay_payment_id, datetime.now(timezone.utc).isoformat(), local_order_id),
+        )
+    return get_payment_session(local_order_id)
+
+
+def create_refund_request(request_id: str, order_id: str, customer_id: str,
+                          razorpay_payment_id: str, amount_paise: int,
+                          evidence_summary: str, idempotency_key: str) -> dict:
+    now = datetime.now(timezone.utc).isoformat()
+    with get_connection() as conn:
+        conn.execute(
+            """INSERT INTO refund_requests
+               (request_id, order_id, customer_id, razorpay_payment_id, amount_paise,
+                evidence_summary, status, idempotency_key, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, 'pending_review', ?, ?)""",
+            (request_id, order_id, customer_id, razorpay_payment_id, amount_paise,
+             evidence_summary, idempotency_key, now),
+        )
+    return get_refund_request(request_id)
+
+
+def get_refund_request(request_id: str) -> dict | None:
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT * FROM refund_requests WHERE request_id = ?", (request_id,)
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def review_refund_request(request_id: str, approved: bool, reviewer: str,
+                          review_note: str, evidence_id: str = None) -> dict | None:
+    """Apply a demo reviewer decision; production should require real staff auth."""
+    status = "approved" if approved else "rejected"
+    with get_connection() as conn:
+        updated = conn.execute(
+            """UPDATE refund_requests
+               SET status = ?, reviewer = ?, review_note = ?, evidence_id = ?, reviewed_at = ?
+               WHERE request_id = ? AND status = 'pending_review'""",
+            (status, reviewer, review_note, evidence_id,
+             datetime.now(timezone.utc).isoformat(), request_id),
+        ).rowcount
+    return get_refund_request(request_id) if updated else None
+
+
+def claim_refund_execution(request_id: str) -> dict | None:
+    """Atomically claim an approved request before it can reach the gateway."""
+    with get_connection() as conn:
+        updated = conn.execute(
+            """UPDATE refund_requests SET status = 'executing'
+               WHERE request_id = ? AND status IN ('approved', 'gateway_error')""",
+            (request_id,),
+        ).rowcount
+    return get_refund_request(request_id) if updated else None
+
+
+def mark_refund_executed(request_id: str, razorpay_refund_id: str) -> dict:
+    with get_connection() as conn:
+        conn.execute(
+            """UPDATE refund_requests
+               SET status = 'executed', razorpay_refund_id = ?, executed_at = ?
+               WHERE request_id = ?""",
+            (razorpay_refund_id, datetime.now(timezone.utc).isoformat(), request_id),
+        )
+    return get_refund_request(request_id)
+
+
+def mark_refund_gateway_error(request_id: str) -> dict:
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE refund_requests SET status = 'gateway_error' WHERE request_id = ?",
+            (request_id,),
+        )
+    return get_refund_request(request_id)
+
+
+def mark_order_complaint_valid(order_id: str) -> None:
+    with get_connection() as conn:
+        conn.execute("UPDATE orders SET complaint_valid = 1 WHERE order_id = ?", (order_id,))
+
+
+def get_executed_refund_total(payment_id: str) -> int:
+    with get_connection() as conn:
+        row = conn.execute(
+            """SELECT COALESCE(SUM(amount_paise), 0) AS total FROM refund_requests
+               WHERE razorpay_payment_id = ? AND status = 'executed'""",
+            (payment_id,),
+        ).fetchone()
+        return int(row["total"])
+
+
+def get_reserved_refund_total(payment_id: str) -> int:
+    """Return value already committed to non-rejected refund requests.
+
+    This prevents two requests for the same captured payment from each passing a
+    check that considers only completed refunds.
+    """
+    with get_connection() as conn:
+        row = conn.execute(
+            """SELECT COALESCE(SUM(amount_paise), 0) AS total FROM refund_requests
+               WHERE razorpay_payment_id = ?
+                 AND status IN ('pending_review', 'approved', 'executing', 'gateway_error', 'executed')""",
+            (payment_id,),
+        ).fetchone()
+        return int(row["total"])
 
 
 def get_all_orders() -> list[dict]:
